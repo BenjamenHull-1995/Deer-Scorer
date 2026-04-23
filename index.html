@@ -1,976 +1,460 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Whitetail Deer Scorer</title>
-  <style>
-    :root {
-      --br-dark:  #3a2414;
-      --br-mid:   #6b4c20;
-      --br-light: #c8b090;
-      --bg:       #f2ece0;
-      --border:   #ede5d8;
-      --gr-dark:  #2a4a1e;
-      --gr-mid:   #4a6741;
-      --rec-bg:   #1e2e18;
-      --touch:    44px;
-    }
-
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html { -webkit-text-size-adjust: 100%; }
-
-    body {
-      font-family: -apple-system, 'Segoe UI', Arial, sans-serif;
-      background: var(--bg);
-      color: #2c2010;
-      padding: 12px;
-      padding-bottom: 48px;
-    }
-
-    .container { max-width: 960px; margin: 0 auto; }
-
-    /* ── Header ── */
-    header {
-      text-align: center;
-      padding: 20px 16px 14px;
-      background: var(--br-dark);
-      color: #f2ece0;
-      border-radius: 12px;
-      margin-bottom: 12px;
-      box-shadow: 0 4px 14px rgba(0,0,0,0.25);
-    }
-    header h1 { font-size: clamp(1.2em, 5vw, 1.6em); letter-spacing: 1px; }
-    header h2 { font-size: 0.82em; font-weight: 400; opacity: 0.65; margin-top: 3px; }
-
-    /* ── Name / date / hunter fields ── */
-    .name-section {
-      background: #fff;
-      border-radius: 10px;
-      padding: 14px 16px;
-      margin-bottom: 12px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-      display: grid;
-      grid-template-columns: 1fr 1fr 1fr;
-      gap: 10px 16px;
-    }
-    .name-field label {
-      display: block;
-      font-weight: 700; font-size: 0.8em; color: var(--br-mid);
-      text-transform: uppercase; letter-spacing: 0.5px;
-      margin-bottom: 5px;
-    }
-    .name-field input {
-      width: 100%;
-      padding: 9px 12px;
-      border: 2px solid var(--br-light); border-radius: 8px;
-      font-size: 16px; background: #fdfaf5; color: var(--br-dark);
-      transition: border-color 0.18s, box-shadow 0.18s;
-      min-height: var(--touch);
-    }
-    .name-field input:focus {
-      outline: none; border-color: var(--br-dark);
-      box-shadow: 0 0 0 3px rgba(58,36,20,0.12);
-    }
-    .name-field input::placeholder { color: #bba880; }
-    .name-field input[type="date"] { color: var(--br-dark); }
-
-    /* ── Actions ── */
-    .actions { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
-    .actions button {
-      flex: 1; min-width: 90px; min-height: var(--touch);
-      border: none; border-radius: 8px; cursor: pointer;
-      font-size: 0.88em; font-weight: 700; letter-spacing: 0.3px;
-      -webkit-tap-highlight-color: transparent;
-      transition: opacity 0.15s, transform 0.1s;
-    }
-    .actions button:active { transform: scale(0.97); opacity: 0.85; }
-    .btn-finalize { background: var(--gr-dark); color: #d4f0c4; order: -1; }
-    .btn-reset    { background: #8c5c2a; color: #fff; }
-    .btn-print    { background: var(--br-dark); color: #f2ece0; }
-
-    /* ── Sections ── */
-    .section {
-      background: #fff; border-radius: 10px; margin-bottom: 12px;
-      overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.07);
-    }
-    .sec-hdr {
-      padding: 9px 14px; font-weight: 700; font-size: 0.75em;
-      letter-spacing: 1px; text-transform: uppercase;
-    }
-    .hdr-info   { background: #6b7c5a; color: #fff; }
-    .hdr-spread { background: var(--gr-mid); color: #fff; }
-    .hdr-abnorm { background: #8c5c2a; color: #fff; }
-    .hdr-main   { background: var(--br-dark); color: #f2ece0; }
-
-    /* ── Section A: point count inputs ── */
-    .info-grid { display: grid; grid-template-columns: 1fr 1fr; }
-    .info-item {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 16px; border-bottom: 1px solid var(--border);
-    }
-    .info-item:nth-child(odd) { border-right: 1px solid var(--border); }
-    .info-item label { font-size: 0.88em; flex: 1; color: var(--br-dark); }
-    .pt-input {
-      width: 72px; min-height: 40px;
-      padding: 5px 8px;
-      border: 2px solid var(--br-light); border-radius: 8px;
-      font-size: 1.15em; font-weight: 700; text-align: center;
-      background: #fdfaf5; color: var(--br-dark);
-      -moz-appearance: textfield;
-      transition: border-color 0.18s, box-shadow 0.18s;
-    }
-    .pt-input::-webkit-inner-spin-button,
-    .pt-input::-webkit-outer-spin-button { -webkit-appearance: none; }
-    .pt-input:focus {
-      outline: none; border-color: var(--br-dark);
-      box-shadow: 0 0 0 3px rgba(58,36,20,0.12);
-    }
-
-    /* ── Spread row ── */
-    .spread-row {
-      display: flex; align-items: center; gap: 10px;
-      padding: 10px 14px; flex-wrap: wrap;
-    }
-    .sr-label { font-size: 0.87em; flex: 1; min-width: 180px; }
-    .sr-label strong { color: var(--br-mid); }
-    .sc-box {
-      display: inline-flex; align-items: center; gap: 8px;
-      background: #eef5eb; border: 1.5px solid #8bba74;
-      border-radius: 7px; padding: 6px 12px;
-      font-size: 0.87em; color: #1e4c14; white-space: nowrap;
-    }
-    .sc-box .sc-val { font-weight: 700; font-size: 1.05em; }
-
-    /* ── Fraction inputs ── */
-    .fi { display: inline-flex; align-items: center; gap: 0; }
-    .fi-w {
-      width: 50px; min-height: 40px;
-      padding: 5px 4px;
-      border: 1.5px solid var(--br-light);
-      border-right: none;
-      border-radius: 6px 0 0 6px;
-      text-align: center; font-size: 16px; background: #fdfaf5;
-      -moz-appearance: textfield;
-    }
-    .fi-w::-webkit-inner-spin-button,
-    .fi-w::-webkit-outer-spin-button { -webkit-appearance: none; }
-    .fi-w:focus {
-      outline: none; border-color: var(--br-dark); background: #fff;
-      position: relative; z-index: 1;
-      box-shadow: -2px 0 0 2px rgba(58,36,20,0.15), 0 0 0 2px rgba(58,36,20,0.15);
-    }
-    .fi-s {
-      min-height: 40px; min-width: 58px;
-      border: 1.5px solid var(--br-light);
-      border-radius: 0 6px 6px 0;
-      background: #fdfaf5; font-size: 16px;
-      padding: 0 2px 0 4px; cursor: pointer;
-      appearance: none; -webkit-appearance: none;
-    }
-    .fi-s:focus {
-      outline: none; border-color: var(--br-dark); background: #fff;
-      position: relative; z-index: 1;
-      box-shadow: 2px 0 0 2px rgba(58,36,20,0.15), 0 0 0 2px rgba(58,36,20,0.15);
-    }
-
-    /* ── Table ── */
-    .tbl-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
-    table { width: 100%; border-collapse: collapse; min-width: 500px; }
-    thead th {
-      background: #f5ede0; padding: 8px 10px; font-size: 0.75em;
-      color: #5a3a18; border-bottom: 2px solid #ddd0be; font-weight: 700;
-    }
-    th.lbl { text-align: left; min-width: 210px; }
-    th.ctr { text-align: center; min-width: 118px; }
-    th.dif { text-align: center; min-width: 80px; }
-    tbody tr:active td { background: #fdf7ee; }
-    tbody td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: middle; font-size: 0.86em; }
-    td.lbl { color: #2c2010; }
-    td.lbl strong { color: var(--br-mid); margin-right: 3px; }
-    td.ctr { text-align: center; }
-    td.diff { text-align: center; font-weight: 700; color: #8b2020; }
-    .note { font-size: 0.72em; color: #8a7a60; padding-top: 2px; display: block; }
-    tr.totals td { background: #f5ede0 !important; font-weight: 700; border-top: 2px solid #ddd0be; }
-
-    /* ── Score cards ── */
-    .score-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
-    .score-card { border-radius: 12px; padding: 18px 16px; box-shadow: 0 4px 14px rgba(0,0,0,0.2); }
-    .card-typical    { background: #2c1a0c; color: #f2ece0; }
-    .card-nontypical { background: #1a2c0c; color: #f2ece0; }
-    .card-title {
-      text-align: center; font-size: 0.72em; letter-spacing: 2px;
-      text-transform: uppercase; opacity: 0.6; margin-bottom: 12px;
-    }
-    .score-pair { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .score-box { text-align: center; background: rgba(255,255,255,0.07); border-radius: 8px; padding: 10px 6px; }
-    .score-box .sb-lbl { font-size: 0.68em; letter-spacing: 1.5px; text-transform: uppercase; opacity: 0.58; }
-    .score-box .sb-val { font-size: clamp(1.3em, 3.5vw, 1.9em); font-weight: 800; line-height: 1.15; margin-top: 3px; }
-    .card-typical    .gross-box .sb-val { color: #e8c878; }
-    .card-typical    .net-box   .sb-val { color: #c8a050; }
-    .card-nontypical .gross-box .sb-val { color: #a8d878; }
-    .card-nontypical .net-box   .sb-val { color: #78b850; }
-
-    .calc-rows { font-size: 0.8em; }
-    .cr { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
-    .cr .cn { opacity: 0.8; }
-    .cr .cv { font-weight: 600; min-width: 70px; text-align: right; font-variant-numeric: tabular-nums; }
-    .cr.add .cv { color: #a8d898; }
-    .cr.sub .cv { color: #f4a4a4; }
-    .cr.st { border-top: 1.5px solid rgba(255,255,255,0.2); border-bottom: 1.5px solid rgba(255,255,255,0.2); font-weight: 700; padding: 5px 0; margin: 3px 0; }
-    .cr.st .cv { color: #e8d8a8; }
-
-    /* ── Toast ── */
-    #toast {
-      position: fixed; bottom: 24px; left: 50%;
-      transform: translateX(-50%) translateY(80px);
-      background: var(--gr-dark); color: #d4f0c4;
-      padding: 12px 24px; border-radius: 24px;
-      font-size: 0.9em; font-weight: 600;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-      transition: transform 0.3s ease, opacity 0.3s ease;
-      opacity: 0; pointer-events: none; z-index: 9999; white-space: nowrap;
-    }
-    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-    /* ── Records ── */
-    #records-section {
-      background: var(--rec-bg); border-radius: 12px;
-      padding: 20px 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.35);
-    }
-    .records-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-    .records-header h3 { color: #a8d878; font-size: 1em; letter-spacing: 1.5px; text-transform: uppercase; }
-    .rec-count { background: rgba(168,216,120,0.18); color: #a8d878; border: 1px solid rgba(168,216,120,0.3); border-radius: 12px; padding: 2px 10px; font-size: 0.78em; font-weight: 700; }
-    .no-records { text-align: center; color: rgba(255,255,255,0.3); font-size: 0.88em; padding: 30px 0; font-style: italic; }
-
-    .record-card { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
-    .record-card:last-child { margin-bottom: 0; }
-
-    .record-top { display: flex; align-items: center; gap: 10px; padding: 12px 14px; cursor: pointer; -webkit-tap-highlight-color: transparent; }
-    .record-top:active { background: rgba(255,255,255,0.04); }
-    .rec-info { flex: 1; }
-    .rec-name { font-weight: 700; font-size: 1em; color: #f2ece0; }
-    .rec-date { font-size: 0.72em; color: rgba(255,255,255,0.4); margin-top: 1px; }
-    .rec-scores { display: flex; gap: 6px; flex-shrink: 0; }
-    .rec-score-chip { text-align: center; background: rgba(255,255,255,0.08); border-radius: 7px; padding: 5px 10px; min-width: 70px; }
-    .rec-score-chip .rsc-lbl { font-size: 0.62em; opacity: 0.55; letter-spacing: 0.5px; }
-    .rec-score-chip .rsc-val { font-size: 1em; font-weight: 800; }
-    .rec-score-chip.typ  .rsc-val { color: #c8a050; }
-    .rec-score-chip.ntyp .rsc-val { color: #78b850; }
-    .rec-chevron { color: rgba(255,255,255,0.35); font-size: 0.9em; transition: transform 0.2s; flex-shrink: 0; }
-    .record-card.open .rec-chevron { transform: rotate(180deg); }
-
-    .record-detail { display: none; padding: 0 14px 14px; border-top: 1px solid rgba(255,255,255,0.08); color: #f2ece0; }
-    .record-card.open .record-detail { display: block; }
-
-    .detail-info { margin: 12px 0 8px; }
-    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 10px; }
-    .detail-block { background: rgba(255,255,255,0.05); border-radius: 7px; padding: 10px 12px; }
-    .detail-block .db-title { font-size: 0.68em; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; margin-bottom: 6px; }
-    .detail-row { display: flex; justify-content: space-between; font-size: 0.8em; padding: 2px 0; border-bottom: 1px solid rgba(255,255,255,0.06); }
-    .detail-row .dr-lbl { opacity: 0.85; }
-    .detail-row .dr-val { font-weight: 600; font-variant-numeric: tabular-nums; }
-    .dr-add .dr-val   { color: #a8d898; }
-    .dr-sub .dr-val   { color: #f4a4a4; }
-    .dr-total .dr-val { color: #e8d8a8; font-size: 1.05em; }
-
-    .meas-detail { margin: 8px 0 10px; }
-    .meas-detail .db-title { font-size: 0.68em; text-transform: uppercase; letter-spacing: 1px; opacity: 0.5; margin-bottom: 6px; }
-    .meas-tbl { width: 100%; border-collapse: collapse; font-size: 0.78em; }
-    .meas-tbl th { color: rgba(255,255,255,0.45); font-size: 0.9em; text-align: right; padding: 3px 8px; border-bottom: 1px solid rgba(255,255,255,0.12); font-weight: 600; }
-    .meas-tbl th:first-child { text-align: left; }
-    .meas-tbl td { padding: 3px 8px; border-bottom: 1px solid rgba(255,255,255,0.05); text-align: right; color: rgba(255,255,255,0.85); font-variant-numeric: tabular-nums; }
-    .meas-tbl .md-lbl { text-align: left; color: rgba(255,255,255,0.55); }
-    .meas-tbl .md-diff { color: #f4c4a4; }
-
-    .rec-actions { display: flex; gap: 8px; margin-top: 12px; }
-    .btn-edit   { background: rgba(80,130,210,0.18); color: #a8c4f4; border: 1px solid rgba(80,130,210,0.3); border-radius: 7px; padding: 8px 14px; font-size: 0.82em; font-weight: 600; cursor: pointer; min-height: var(--touch); -webkit-tap-highlight-color: transparent; }
-    .btn-edit:active   { background: rgba(80,130,210,0.35); }
-    .btn-delete { background: rgba(200,80,80,0.2); color: #f4a4a4; border: 1px solid rgba(200,80,80,0.3); border-radius: 7px; padding: 8px 14px; font-size: 0.82em; font-weight: 600; cursor: pointer; min-height: var(--touch); -webkit-tap-highlight-color: transparent; }
-    .btn-delete:active { background: rgba(200,80,80,0.35); }
-
-    .edit-banner {
-      background: rgba(80,130,210,0.15); border: 1px solid rgba(80,130,210,0.3);
-      border-radius: 8px; padding: 8px 14px; margin-bottom: 12px;
-      font-size: 0.84em; color: #a8c4f4; display: none;
-    }
-    .edit-banner.active { display: block; }
-
-    /* ── Responsive ── */
-    @media (max-width: 600px) {
-      .name-section  { grid-template-columns: 1fr; }
-      .score-grid    { grid-template-columns: 1fr !important; }
-      .info-grid     { grid-template-columns: 1fr; }
-      .info-item:nth-child(odd) { border-right: none; }
-      .detail-grid   { grid-template-columns: 1fr; }
-    }
-
-    /* ── Print ── */
-    @media print {
-      body { background: #fff; padding: 0; }
-      .actions, #records-section, #toast { display: none !important; }
-      .score-card { box-shadow: none; border: 2px solid #ccc; page-break-inside: avoid; }
-      .card-typical, .card-nontypical { color: #111 !important; background: #f5f5f0 !important; }
-      .sb-val, .cr .cv, .cr.st .cv { color: #2c1a0c !important; }
-    }
-  </style>
-</head>
-<body>
-<div class="container">
-
-  <header>
-    <h1>WHITETAIL DEER SCORER</h1>
-    <h2>Boone &amp; Crockett / Pope &amp; Young &mdash; Typical &amp; Non-Typical</h2>
-  </header>
-
-  <!-- Animal Name / Date Harvested / Hunter Name -->
-  <div class="name-section">
-    <div class="name-field">
-      <label for="animal_name">Animal Name</label>
-      <input type="text" id="animal_name" placeholder="e.g. Big 8, Buck 2024…" autocomplete="off" autocorrect="off" spellcheck="false">
-    </div>
-    <div class="name-field">
-      <label for="date_harvested">Date Harvested</label>
-      <input type="date" id="date_harvested">
-    </div>
-    <div class="name-field">
-      <label for="hunter_name">Hunter Name</label>
-      <input type="text" id="hunter_name" placeholder="Hunter's name…" autocomplete="off" spellcheck="false">
-    </div>
-  </div>
-
-  <!-- Edit mode banner -->
-  <div class="edit-banner" id="edit-banner">&#9998; Editing record — make your changes, then tap <strong>Update Record</strong>.</div>
-
-  <!-- Actions -->
-  <div class="actions">
-    <button class="btn-finalize" onclick="finalizeRecord()">&#10003; Finalize &amp; Save</button>
-    <button class="btn-reset"    onclick="resetForm()">&#8635; Reset</button>
-    <button class="btn-print"    onclick="window.print()">&#128438; Print / PDF</button>
-  </div>
-
-  <!-- A — Point count inputs -->
-  <div class="section">
-    <div class="sec-hdr hdr-info">A &mdash; Number of Points per Side (beam tip counts as 1 &mdash; G-rows auto-adjust)</div>
-    <div class="info-grid">
-      <div class="info-item">
-        <label>Right Antler Points</label>
-        <input type="number" id="a_right" class="pt-input" min="1" max="8" step="1" placeholder="0" inputmode="numeric" oninput="calculate()">
-      </div>
-      <div class="info-item">
-        <label>Left Antler Points</label>
-        <input type="number" id="a_left" class="pt-input" min="1" max="8" step="1" placeholder="0" inputmode="numeric" oninput="calculate()">
-      </div>
-    </div>
-  </div>
-
-  <!-- D — Inside Spread -->
-  <div class="section">
-    <div class="sec-hdr hdr-spread">D &mdash; Inside Spread of Main Beams</div>
-    <div class="spread-row">
-      <div class="sr-label">
-        <strong>D.</strong> Inside Spread of Main Beams
-        <span class="note">Spread Credit = Inside Spread unless it exceeds the longer main beam &mdash; then use longer main beam length</span>
-      </div>
-      <span id="fi_d_spread"></span>
-      <div class="sc-box">
-        Spread Credit: <span class="sc-val" id="spread_credit">—</span>
-      </div>
-    </div>
-  </div>
-
-  <!-- E — Abnormal Points -->
-  <div class="section">
-    <div class="sec-hdr hdr-abnorm">E &mdash; Abnormal Points</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th class="lbl">Measurement</th>
-            <th class="ctr">Right Antler</th>
-            <th class="ctr">Left Antler</th>
-            <th class="dif">Total (R+L)</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <td class="lbl">
-              <strong>E.</strong> Total Length of Abnormal Points
-              <span class="note">Non-Typical scoring only: ADDED to gross score</span>
-            </td>
-            <td class="ctr" id="fi_e_right"></td>
-            <td class="ctr" id="fi_e_left"></td>
-            <td class="diff" id="e_total">—</td>
-          </tr>
-        </tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- F, G, H — Main measurements (built by JS) -->
-  <div class="section">
-    <div class="sec-hdr hdr-main">F, G, H &mdash; Main Beam, Points &amp; Circumferences</div>
-    <div class="tbl-wrap">
-      <table>
-        <thead>
-          <tr>
-            <th class="lbl">Measurement</th>
-            <th class="ctr">Right Antler<br><small>Column 1</small></th>
-            <th class="ctr">Left Antler<br><small>Column 2</small></th>
-            <th class="dif">Difference<br><small>Column 3</small></th>
-          </tr>
-        </thead>
-        <tbody id="meas-body"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <!-- Score Cards -->
-  <div class="score-grid" id="score-grid">
-
-    <div class="score-card card-typical">
-      <div class="card-title">Typical Scoring</div>
-      <div class="score-pair">
-        <div class="score-box gross-box">
-          <div class="sb-lbl">Gross</div>
-          <div class="sb-val" id="typ_gross">—</div>
-        </div>
-        <div class="score-box net-box">
-          <div class="sb-lbl">Net</div>
-          <div class="sb-val" id="typ_net">—</div>
-        </div>
-      </div>
-      <div class="calc-rows">
-        <div class="cr add"><span class="cn">Spread Credit</span>     <span class="cv" id="tc_spread">+&nbsp;—</span></div>
-        <div class="cr add"><span class="cn">Right (Col 1)</span>      <span class="cv" id="tc_c1">+&nbsp;—</span></div>
-        <div class="cr add"><span class="cn">Left (Col 2)</span>       <span class="cv" id="tc_c2">+&nbsp;—</span></div>
-        <div class="cr st" ><span class="cn">Gross Score</span>        <span class="cv" id="tc_gross_row">—</span></div>
-        <div class="cr sub"><span class="cn">Differences (Col 3)</span><span class="cv" id="tc_c3">&minus;&nbsp;—</span></div>
-        <div class="cr sub"><span class="cn">Abnormal Points (E)</span><span class="cv" id="tc_e">&minus;&nbsp;—</span></div>
-        <div class="cr st" ><span class="cn">Net Score</span>          <span class="cv" id="tc_net_row">—</span></div>
-      </div>
-    </div>
-
-    <div class="score-card card-nontypical" id="nt-card" style="display:none">
-      <div class="card-title">Non-Typical Scoring</div>
-      <div class="score-pair">
-        <div class="score-box gross-box">
-          <div class="sb-lbl">Gross</div>
-          <div class="sb-val" id="nt_gross">—</div>
-        </div>
-        <div class="score-box net-box">
-          <div class="sb-lbl">Net</div>
-          <div class="sb-val" id="nt_net">—</div>
-        </div>
-      </div>
-      <div class="calc-rows">
-        <div class="cr add"><span class="cn">Spread Credit</span>     <span class="cv" id="nc_spread">+&nbsp;—</span></div>
-        <div class="cr add"><span class="cn">Right (Col 1)</span>      <span class="cv" id="nc_c1">+&nbsp;—</span></div>
-        <div class="cr add"><span class="cn">Left (Col 2)</span>       <span class="cv" id="nc_c2">+&nbsp;—</span></div>
-        <div class="cr add"><span class="cn">Abnormal Points (E)</span><span class="cv" id="nc_e">+&nbsp;—</span></div>
-        <div class="cr st" ><span class="cn">Gross Score</span>        <span class="cv" id="nc_gross_row">—</span></div>
-        <div class="cr sub"><span class="cn">Differences (Col 3)</span><span class="cv" id="nc_c3">&minus;&nbsp;—</span></div>
-        <div class="cr st" ><span class="cn">Net Score</span>          <span class="cv" id="nc_net_row">—</span></div>
-      </div>
-    </div>
-
-  </div><!-- /score-grid -->
-
-  <!-- Saved Records -->
-  <div id="records-section">
-    <div class="records-header">
-      <h3>&#128218; Saved Records</h3>
-      <span class="rec-count" id="rec-count">0 deer</span>
-    </div>
-    <div id="records-list">
-      <div class="no-records">No records yet. Score a deer and tap "Finalize &amp; Save".</div>
-    </div>
-  </div>
-
-</div><!-- /container -->
-
-<div id="toast"></div>
-
-<script>
-/* ─────────────────────────────────────────────
-   Constants
-───────────────────────────────────────────── */
-const MEAS = [
-  { id:'f',  lb:'F.',   nm:'Length of Main Beam' },
-  { id:'g1', lb:'G-1.', nm:'First Point — Brow Tine',           gnum:1 },
-  { id:'g2', lb:'G-2.', nm:'Second Point',                       gnum:2 },
-  { id:'g3', lb:'G-3.', nm:'Third Point',                        gnum:3 },
-  { id:'g4', lb:'G-4.', nm:'Fourth Point, if present',           gnum:4 },
-  { id:'g5', lb:'G-5.', nm:'Fifth Point, if present',            gnum:5 },
-  { id:'g6', lb:'G-6.', nm:'Sixth Point, if present',            gnum:6 },
-  { id:'g7', lb:'G-7.', nm:'Seventh Point, if present',          gnum:7 },
-  { id:'h1', lb:'H-1.', nm:'Circumference — Burr to G-1',       nt:'If G-1 missing: measure smallest place between burr and G-2' },
-  { id:'h2', lb:'H-2.', nm:'Circumference — G-1 to G-2' },
-  { id:'h3', lb:'H-3.', nm:'Circumference — G-2 to G-3' },
-  { id:'h4', lb:'H-4.', nm:'Circumference — G-3 to G-4',       nt:'If G-4 missing: measure halfway between G-3 and tip of main beam' },
-];
-
-const FOPTS = `
-  <option value="0">0/8</option>
-  <option value="0.125">1/8</option>
-  <option value="0.25">2/8</option>
-  <option value="0.375">3/8</option>
-  <option value="0.5">4/8</option>
-  <option value="0.625">5/8</option>
-  <option value="0.75">6/8</option>
-  <option value="0.875">7/8</option>`;
-
-/* ─────────────────────────────────────────────
-   Build fraction-input HTML
-───────────────────────────────────────────── */
-function fi(base) {
-  return `<div class="fi">`
-    + `<input type="number" id="${base}_w" class="fi-w" min="0" step="1" placeholder="0" inputmode="numeric" oninput="calculate()">`
-    + `<select id="${base}_f" class="fi-s" onchange="calculate()">${FOPTS}</select>`
-    + `</div>`;
-}
-
-function buildTable() {
-  document.getElementById('fi_d_spread').innerHTML = fi('d_spread');
-  document.getElementById('fi_e_right').innerHTML  = fi('e_right');
-  document.getElementById('fi_e_left').innerHTML   = fi('e_left');
-
-  document.getElementById('meas-body').innerHTML =
-    MEAS.map(m => {
-      const gAttr = m.gnum ? ` data-gnum="${m.gnum}" style="display:none"` : '';
-      return `<tr${gAttr}>`
-        + `<td class="lbl"><strong>${m.lb}</strong> ${m.nm}${m.nt ? `<span class="note">${m.nt}</span>` : ''}</td>`
-        + `<td class="ctr">${fi(m.id + '_r')}</td>`
-        + `<td class="ctr">${fi(m.id + '_l')}</td>`
-        + `<td class="diff" id="d_${m.id}">—</td>`
-        + `</tr>`;
-    }).join('')
-    + `<tr class="totals">`
-    + `<td class="lbl">TOTALS (F – H4)</td>`
-    + `<td class="ctr" id="total_c1">—</td>`
-    + `<td class="ctr" id="total_c2">—</td>`
-    + `<td class="diff" id="total_c3">—</td>`
-    + `</tr>`;
-}
-
-/* ─────────────────────────────────────────────
-   Helpers
-───────────────────────────────────────────── */
-function fv(base) {
-  const w = parseFloat(document.getElementById(base + '_w').value) || 0;
-  const f = parseFloat(document.getElementById(base + '_f').value) || 0;
-  return w + f;
-}
-
-function set(id, txt) {
-  const el = document.getElementById(id);
-  if (el) el.textContent = txt;
-}
-
-/* Reverse of fv() — write a decimal value back into a fraction input pair */
-const FRAC_OPTS = ['0','0.125','0.25','0.375','0.5','0.625','0.75','0.875'];
-function setFV(base, val) {
-  val = val || 0;
-  const eighths = Math.round(Math.abs(val) * 8);
-  const whole   = Math.floor(eighths / 8);
-  const rem     = eighths % 8;
-  const wEl = document.getElementById(base + '_w');
-  const fEl = document.getElementById(base + '_f');
-  if (wEl) wEl.value = whole > 0 ? String(whole) : '';
-  if (fEl) fEl.value = FRAC_OPTS[rem];
-}
-
-function toFrac(val) {
-  if (val === null || val === undefined) return '—';
-  const neg = val < 0;
-  const eighths = Math.round(Math.abs(val) * 8);
-  if (eighths === 0) return '0"';
-  const whole = Math.floor(eighths / 8);
-  const rem   = eighths % 8;
-  let s = '';
-  if (whole > 0) s += whole;
-  if (rem   > 0) s += (whole > 0 ? '-' : '') + rem + '/8';
-  return (neg ? '-' : '') + s + '"';
-}
-
-/* ─────────────────────────────────────────────
-   Main calculate
-───────────────────────────────────────────── */
-let _last      = {};
-let _editingId = null;
-
-function calculate() {
-  const d   = fv('d_spread');
-  const f_r = fv('f_r'), f_l = fv('f_l');
-  const e_r = fv('e_right'), e_l = fv('e_left');
-
-  /* Point counts → show/hide G rows */
-  const ptR = parseInt(document.getElementById('a_right').value) || 0;
-  const ptL = parseInt(document.getElementById('a_left').value) || 0;
-  const gRowsNeeded = Math.max(0, Math.max(ptR, ptL) - 1);
-
-  document.querySelectorAll('tr[data-gnum]').forEach(tr => {
-    const gnum = parseInt(tr.dataset.gnum);
-    if (gnum <= gRowsNeeded) {
-      tr.style.display = '';
-    } else {
-      tr.style.display = 'none';
-      tr.querySelectorAll('.fi-w').forEach(el => { el.value = ''; });
-      tr.querySelectorAll('.fi-s').forEach(el => { el.value = '0'; });
-    }
-  });
-
-  /* Spread credit */
-  const longer = Math.max(f_r, f_l);
-  const sc = (longer > 0 && d > longer) ? longer : d;
-  set('spread_credit', toFrac(sc));
-
-  /* Abnormal total */
-  const eTotal = e_r + e_l;
-  set('e_total', toFrac(eTotal));
-
-  /* Column totals */
-  let c1 = 0, c2 = 0, c3 = 0;
-  MEAS.forEach(m => {
-    const r = fv(m.id + '_r'), l = fv(m.id + '_l');
-    const diff = Math.abs(r - l);
-    c1 += r; c2 += l; c3 += diff;
-    set('d_' + m.id, (r > 0 || l > 0) ? toFrac(diff) : '—');
-  });
-
-  set('total_c1', toFrac(c1));
-  set('total_c2', toFrac(c2));
-  set('total_c3', toFrac(c3));
-
-  /* Scores */
-  const typGross = sc + c1 + c2;
-  const typNet   = typGross - c3 - eTotal;
-  const ntGross  = sc + c1 + c2 + eTotal;
-  const ntNet    = ntGross - c3;
-
-  set('typ_gross',    toFrac(typGross));
-  set('typ_net',      toFrac(typNet));
-  set('tc_spread',    '+ ' + toFrac(sc));
-  set('tc_c1',        '+ ' + toFrac(c1));
-  set('tc_c2',        '+ ' + toFrac(c2));
-  set('tc_gross_row', toFrac(typGross));
-  set('tc_c3',        '− ' + toFrac(c3));
-  set('tc_e',         '− ' + toFrac(eTotal));
-  set('tc_net_row',   toFrac(typNet));
-
-  set('nt_gross',     toFrac(ntGross));
-  set('nt_net',       toFrac(ntNet));
-  set('nc_spread',    '+ ' + toFrac(sc));
-  set('nc_c1',        '+ ' + toFrac(c1));
-  set('nc_c2',        '+ ' + toFrac(c2));
-  set('nc_e',         '+ ' + toFrac(eTotal));
-  set('nc_gross_row', toFrac(ntGross));
-  set('nc_c3',        '− ' + toFrac(c3));
-  set('nc_net_row',   toFrac(ntNet));
-
-  /* Show/hide NT card based on E data */
-  const ntCard    = document.getElementById('nt-card');
-  const scoreGrid = document.getElementById('score-grid');
-  if (ntCard)    ntCard.style.display = eTotal > 0 ? '' : 'none';
-  if (scoreGrid) scoreGrid.style.gridTemplateColumns = eTotal > 0 ? '' : '1fr';
-
-  _last = { sc, c1, c2, c3, eTotal, typGross, typNet, ntGross, ntNet };
-}
-
-/* ─────────────────────────────────────────────
-   Reset
-───────────────────────────────────────────── */
-function resetForm() {
-  document.querySelectorAll('.fi-w').forEach(el => el.value = '');
-  document.querySelectorAll('.fi-s').forEach(el => el.value = '0');
-  document.getElementById('animal_name').value    = '';
-  document.getElementById('date_harvested').value = '';
-  document.getElementById('hunter_name').value    = '';
-  document.getElementById('a_right').value        = '';
-  document.getElementById('a_left').value         = '';
-
-  document.querySelectorAll('tr[data-gnum]').forEach(tr => { tr.style.display = 'none'; });
-
-  ['spread_credit','e_total',
-   'total_c1','total_c2','total_c3',
-   'typ_gross','typ_net','nt_gross','nt_net',
-   'tc_spread','tc_c1','tc_c2','tc_gross_row','tc_c3','tc_e','tc_net_row',
-   'nc_spread','nc_c1','nc_c2','nc_e','nc_gross_row','nc_c3','nc_net_row'
-  ].forEach(id => set(id, '—'));
-
-  MEAS.forEach(m => set('d_' + m.id, '—'));
-
-  const ntCard    = document.getElementById('nt-card');
-  const scoreGrid = document.getElementById('score-grid');
-  if (ntCard)    ntCard.style.display = 'none';
-  if (scoreGrid) scoreGrid.style.gridTemplateColumns = '1fr';
-
-  _editingId = null;
-  document.querySelector('.btn-finalize').innerHTML = '&#10003; Finalize &amp; Save';
-  document.getElementById('edit-banner').classList.remove('active');
-
-  _last = {};
-}
-
-/* ─────────────────────────────────────────────
-   Toast
-───────────────────────────────────────────── */
-let _toastTimer;
-function showToast(msg) {
-  const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(_toastTimer);
-  _toastTimer = setTimeout(() => el.classList.remove('show'), 2800);
-}
-
-/* ─────────────────────────────────────────────
-   Records (localStorage)
-───────────────────────────────────────────── */
-function loadRecords() {
-  try { return JSON.parse(localStorage.getItem('deerRecords') || '[]'); }
-  catch(e) { return []; }
-}
-function saveRecords(arr) { localStorage.setItem('deerRecords', JSON.stringify(arr)); }
-
-function finalizeRecord() {
-  const name = (document.getElementById('animal_name').value || '').trim();
-  if (!name) {
-    showToast('⚠ Enter an animal name first.');
-    document.getElementById('animal_name').focus();
-    return;
-  }
-  if (!Object.keys(_last).length) {
-    showToast('⚠ Enter measurements before saving.');
-    return;
-  }
-
-  /* Capture all input values for full detail view */
-  const inputs = {
-    animalName:    name,
-    dateHarvested: document.getElementById('date_harvested').value || '',
-    hunterName:    (document.getElementById('hunter_name').value || '').trim(),
-    pointsRight:   parseInt(document.getElementById('a_right').value) || 0,
-    pointsLeft:    parseInt(document.getElementById('a_left').value) || 0,
-    dSpread:       fv('d_spread'),
-    eRight:        fv('e_right'),
-    eLeft:         fv('e_left'),
+● Update(deer_scorer.html)
+  ⎿  Added 1 line, removed 1 line
+      66        width: 100%;      
+      67        padding: 9px 12px;
+      68        border: 2px solid var(--br-light); border-radius: 8px;
+      69 -      font-size: 0.95em; background: #fdfaf5; color: var(--br-dark);                                                                                                                                                          69 +      font-size: 16px; background: #fdfaf5; color: var(--br-dark);
+      70        transition: border-color 0.18s, box-shadow 0.18s;                                                                                                                                                                 
+      71        min-height: var(--touch);                                                                                                                                                                                         
+      72      }
+
+● Update(deer_scorer.html)        
+  ⎿  Added 1 line, removed 1 line
+      152        border: 1.5px solid var(--br-light);
+      153        border-right: none;                                                                                                                                                                                                    154        border-radius: 6px 0 0 6px;
+      155 -      text-align: center; font-size: 0.9em; background: #fdfaf5;                                                                                                                                                             155 +      text-align: center; font-size: 16px; background: #fdfaf5;                                                                                                                                                        
+      71        min-height: var(--touch);
+      72      }
+
+● Update(deer_scorer.html)
+  ⎿  Added 1 line, removed 1 line
+      152        border: 1.5px solid var(--br-light);
+      153        border-right: none;
+      154        border-radius: 6px 0 0 6px;
+      155 -      text-align: center; font-size: 0.9em; background: #fdfaf5;
+● Update(deer_scorer.html)
+● Update(deer_scorer.html)
+  ⎿  Added 1 line, removed 1 line
+      152        border: 1.5px solid var(--br-light);
+      153        border-right: none;
+      154        border-radius: 6px 0 0 6px;
+      155 -      text-align: center; font-size: 0.9em; background: #fdfaf5;                                                                                                                                                       
+      155 +      text-align: center; font-size: 16px; background: #fdfaf5;                                                                                                                                                        
+      156        -moz-appearance: textfield;
+      157      }
+      158      .fi-w::-webkit-inner-spin-button,
+
+● Update(deer_scorer.html)
+  ⎿  Added 1 line, removed 1 line
+      166        min-height: 40px; min-width: 58px;
+      167        border: 1.5px solid var(--br-light);
+      168        border-radius: 0 6px 6px 0;
+      169 -      background: #fdfaf5; font-size: 0.85em;                                                                                                                                                                          
+      169 +      background: #fdfaf5; font-size: 16px;                                                                                                                                                                            
+      170        padding: 0 2px 0 4px; cursor: pointer;
+      171        appearance: none; -webkit-appearance: none;
+      172      }
+
+● All three input types now use font-size: 16px — the threshold below which iOS Safari tries to auto-zoom (and maximum-scale=1.0 blocks that zoom, leaving the field stuck and unresponsive). Re-open the file on your iPhone and 
+  the keyboard should appear normally when you tap any field.
+
+✻ Cooked for 54s
+
+※ recap: Fixed iPhone input bug in deer_scorer.html by raising font sizes to 16px so iOS Safari stops blocking the keyboard. Test it on your iPhone next. (disable recaps in /config)                                                
+❯ When I forward this to myself in an email. My phone doesn't give great options to open the html is there a different way of sharing?                                                                                                                                                                                                                                                                                                                              
+● A few good options, ranked by simplicity:                                                                                                                                                                                       
+                                                                                                                                                                                                                                  
+  1. Netlify Drop (easiest — 2 minutes)
+  Go to drop.netlify.com in your browser, drag the deer_scorer.html file onto the page, and it gives you a permanent URL you can bookmark on your iPhone. No account required for a temporary link, or create a free account to     keep the URL forever.
+                                                                                                                                                                                                                                  
+  2. GitHub Pages (free, permanent)                                                                                                                                                                                               
+  If you're comfortable with GitHub, push the file to a repo and enable Pages — gives you a clean URL like yourusername.github.io/deer-scorer.
+
+  3. OneDrive (you're already using it)
+  You already have the file in OneDrive. On your iPhone, open the OneDrive app, find deer_scorer.html, tap the ... menu, and choose Open in Browser (Safari). The downside is it's a few taps every time instead of a bookmark.   
+
+  4. Add it to your iPhone Home Screen (best long-term experience)
+  Once you have it on a URL (option 1 or 2), open it in Safari on your iPhone, tap the Share button, then Add to Home Screen. It'll appear as an app icon and launch full-screen like a native app — which is probably the best   
+  experience for something you use in the field.
+
+  I'd go with Netlify Drop to get a URL in under 2 minutes, then add it to your Home Screen.
+
+❯ Let's go the route of github pages                                                                                                                                                                                                                                   
+● Good choice. First, let me rename the file to index.html so your URL will be clean (e.g. username.github.io/deer-scorer instead of .../deer_scorer.html).                                                                       
+                                                                                                                                                                                                                                  
+● Bash(cp "/c/Users/bhull/OneDrive - 3G Company/Desktop/Deer Scorer/deer_scorer.html" "/c/Users/bhull/OneDrive - 3G Company/Desktop/Deer Scorer/index.html")                                                                      
+  ⎿  Done                                                                                                                                                                                                                                                                                                                                                                                                                                                           
+● index.html is ready. Now here are the steps in GitHub:                                                                                                                                                                          
+                                                                                                                                                                                                                                  
+  Step 1 — Create a GitHub account                                                                                                                                                                                                
+  Go to github.com and sign up if you don't have one already.                                                                                                                                                                        
+  Step 2 — Create a new repository                                                                                                                                                                                                
+  - Click the + in the top-right → New repository                                                                                                                                                                                 
+  - Name it something like deer-scorer
+  - Set it to Public
+  - Leave everything else unchecked, click Create repository
+
+  Step 3 — Upload the file
+  - On the new repo page, click uploading an existing file
+  - Drag index.html from your Desktop's Deer Scorer folder onto the page
+  - Scroll down and click Commit changes
+
+  Step 4 — Enable GitHub Pages
+  - Go to Settings (tab at the top of the repo)
+  - Click Pages in the left sidebar
+  - Under Source, select Deploy from a branch
+  - Set Branch to main, folder to / (root)
+  - Click Save
+
+  Step 5 — Get your URL
+  Wait about 1-2 minutes, then your site will be live at:
+  https://yourusername.github.io/deer-scorer
+
+  GitHub will also show the URL at the top of the Pages settings once it's deployed. From there, open it in Safari on your iPhone and tap Share → Add to Home Screen for the full app-like experience.
+
+※ recap: Setting up the Deer Scorer as a GitHub Pages website so it's easy to open on iPhone. Next step: create a GitHub account at github.com if you don't have one, then create a new public repository named deer-scorer.        (disable recaps in /config)
+                                                                                                                                                                                                                                  ❯ This worked. I want to be able to add people to this. Meaning invite friends. Where we can all see the same saved records                                                                                                                                                                                                                                                                                                                                         
+● Right now records are saved in localStorage — which is per-device and private. To share records across a group of friends, you need a real database in the cloud.                                                               
+                                                                                                                                                                                                                                  
+  The best fit for this setup is Firebase Firestore (Google's free cloud database). It works directly in a static HTML file with no backend server needed, has a generous free tier (way more than a group of hunters would use),
+  and records sync in real-time — if one person saves a deer, everyone sees it immediately.                                                                                                                                          
+  Here's what's involved:                                                                                                                                                                                                         
+  - Create a free Firebase project (takes ~5 minutes)                                                                                                                                                                             
+  - Add a few lines of Firebase SDK to the HTML
+  - Replace the localStorage calls with Firestore reads/writes
+  - Everyone uses the same URL, sees the same records
+
+  One thing to decide upfront: should there be any access control? Options:
+  - Open — anyone with the URL can add/delete records (simplest)
+  - Read-only sharing — only the people who know a simple code can add records
+  - Login required — each person has their own Google/email login (most work to set up)
+
+  For a small group of friends, "open to anyone with the URL" is probably fine since GitHub Pages URLs aren't easily guessable, but worth deciding before we build it.
+
+  Want to go ahead? If so, let me know which access option you prefer and I'll walk you through the Firebase setup and update the code.
+
+❯ Let's go with the firebase option                                                                                                                                                                                                                                   
+● Good call. I'll first walk you through the Firebase setup (you need to do this part), then I'll update the code to wire everything together.                                                                                    
+                                                                                                                                                                                                                                    Step 1 — Create a Firebase project                                                                                                                                                                                              
+  1. Go to console.firebase.google.com and sign in with your Google account                                                                                                                                                         2. Click Add project, name it deer-scorer, click through the steps (you can disable Google Analytics)                                                                                                                           
+  3. Once created, click the Web icon (</>) to add a web app                                                                                                                                                                      
+  4. Name it deer-scorer, click Register app                                                                                                                                                                                      
+  5. You'll see a firebaseConfig block — copy it, you'll need it shortly
+
+  Step 2 — Set up Firestore
+  1. In the left sidebar, click Firestore Database
+  2. Click Create database
+  3. Choose Start in test mode (allows open read/write — fine for a friend group)
+  4. Pick any region (us-east1 is a safe default), click Enable
+
+  Once you've done those two steps, let me know and paste your firebaseConfig block here. I'll update the code immediately.
+
+  While you're doing that, let me prep the updated file so it's ready to go the moment you have the config.
+
+  Read 1 file (ctrl+o to expand)    
+
+● Good, I have everything I need. Let me make both edits now — the Firebase SDK script tags and the updated JavaScript.
+                                                             
+● Update(index.html)      
+  ⎿  Added 19 lines                                                                                                                                                                                                               
+      493                                                                                                                                                                                                                         
+      494  <div id="toast"></div>                                                                                                                                                                                                       495                                                                                                                                                                                                                         
+      496 +<!-- Firebase SDK -->                                                                                                                                                                                                        497 +<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+      498 +<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>                                                                                                                        
+      499 +                                                                                                                                                                                                                       
+      500  <script>
+      501  /* ─────────────────────────────────────────────
+      502 +   Firebase — paste your config values here                                                                                                                                                                            
+      503 +───────────────────────────────────────────── */                                                                                                                                                                       
+      504 +const firebaseConfig = {                                                                                                                                                                                               
+      505 +  apiKey:            "PASTE_YOUR_API_KEY",                                                                                                                                                                             
+      506 +  authDomain:        "PASTE_YOUR_AUTH_DOMAIN",                                                                                                                                                                         
+      507 +  projectId:         "PASTE_YOUR_PROJECT_ID",                                                                                                                                                                          
+      508 +  storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",                                                                                                                                                                      
+      509 +  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",                                                                                                                                                                 
+      510 +  appId:             "PASTE_YOUR_APP_ID"                                                                                                                                                                               
+      511 +};                                                                                                                                                                                                                     
+      512 +firebase.initializeApp(firebaseConfig);                                                                                                                                                                                
+      513 +const db  = firebase.firestore();                                                                                                                                                                                      
+      514 +const col = db.collection('deerRecords');                                                                                                                                                                              
+      515 +                                                                                                                                                                                                                       
+      516 +/* ─────────────────────────────────────────────                                                                                                                                                                       
+      517     Constants
+      518  ───────────────────────────────────────────── */
+      519  const MEAS = [
+
+● Now replace the records section (everything from let _last down to the closing </script>):
+
+● Update(index.html)     
+  ⎿  Added 1 line                                                                                                                                                                                                                       619  ───────────────────────────────────────────── */
+      620  let _last      = {};                                                                                                                                                                                                         621  let _editingId = null;                                                                                                                                                                                                 
+      622 +let _records   = [];                                                                                                                                                                                                   
+      623                                                                                                                                                                                                                         
+      624  function calculate() {
+      625    const d   = fv('d_spread');
+
+● Now replace the entire records block (from the localStorage comment down to the end of the script):
+
+● Update(index.html)      
+  ⎿  Added 38 lines, removed 54 lines                                                                                                                                                                                                   747  }
+      748                                                                                                                                                                                                                               749  /* ─────────────────────────────────────────────                                                                                                                                                                       
+      750 -   Records (localStorage)                                                                                                                                                                                              
+      750 +   Records (Firestore — real-time shared)                                                                                                                                                                              
+      751  ───────────────────────────────────────────── */
+      752 -function loadRecords() {                                                                                                                                                                                               
+      753 -  try { return JSON.parse(localStorage.getItem('deerRecords') || '[]'); }                                                                                                                                              
+      754 -  catch(e) { return []; }                                                                                                                                                                                              
+      755 -}                                                                                                                                                                                                                      
+      756 -function saveRecords(arr) { localStorage.setItem('deerRecords', JSON.stringify(arr)); }                                                                                                                                
+      752
+      758 -function finalizeRecord() {                                                                                                                                                                                            
+      753 +/* Live listener: updates _records and re-renders whenever any user changes data */                                                                                                                                    
+      754 +col.orderBy('createdAt', 'desc').onSnapshot(                                                                                                                                                                           
+      755 +  snapshot => {                                                                                                                                                                                                        
+      756 +    _records = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));                                                                                                                                              
+      757 +    renderRecords();                                                                                                                                                                                                   
+      758 +  },                                                                                                                                                                                                                   
+      759 +  err => showToast('⚠ Connection error — check your internet.')                                                                                                                                                        
+      760 +);                                                                                                                                                                                                                     
+      761 +                                                                                                                                                                                                                       
+      762 +async function finalizeRecord() {                                                                                                                                                                                      
+      763    const name = (document.getElementById('animal_name').value || '').trim();
+      764    if (!name) {
+      765      showToast('⚠ Enter an animal name first.');
+     ...
+      771      return;
+      772    }
+      773
+      770 -  /* Capture all input values for full detail view */                                                                                                                                                                  
+      774    const inputs = {
+      775      animalName:    name,
+      776      dateHarvested: document.getElementById('date_harvested').value || '',
+     ...
+      787    });
+      788
+      789    const rec = {
+      787 -    id:     Date.now(),                                                                                                                                                                                                
+      788 -    name:   name,                                                                                                                                                                                                      
+      790 +    name,                                                                                                                                                                                                              
+      791      date:   new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }),
+      792      scores: { ..._last },
+      791 -    inputs: inputs,                                                                                                                                                                                                    
+      793 +    inputs,                                                                                                                                                                                                            
+      794    };
+      793 -  const records = loadRecords();                                                                                                                                                                                       
+      795
+      796    if (_editingId !== null) {
+      797      const editId = _editingId;
+      798      _editingId = null;
+      799      document.querySelector('.btn-finalize').innerHTML = '&#10003; Finalize &amp; Save';
+      800      document.getElementById('edit-banner').classList.remove('active');
+      800 -    const idx = records.findIndex(r => r.id === editId);                                                                                                                                                               
+      801 -    if (idx !== -1) {                                                                                                                                                                                                  
+      802 -      records[idx] = { id: records[idx].id, name, date: records[idx].date, scores: { ..._last }, inputs };                                                                                                             
+      801 +    try {                                                                                                                                                                                                              
+      802 +      await col.doc(editId).set(rec, { merge: true });                                                                                                                                                                 
+      803 +      showToast('✓ "' + name + '" updated!');                                                                                                                                                                          
+      804 +    } catch(e) {                                                                                                                                                                                                       
+      805 +      showToast('⚠ Failed to update. Check connection.');                                                                                                                                                              
+      806      }
+      804 -    saveRecords(records);                                                                                                                                                                                              
+      805 -    renderRecords();                                                                                                                                                                                                   
+      806 -    showToast('✓ "' + name + '" updated!');                                                                                                                                                                            
+      807    } else {
+      808 -    const rec = {                                                                                                                                                                                                      
+      809 -      id:     Date.now(),                                                                                                                                                                                              
+      810 -      name,                                                                                                                                                                                                            
+      811 -      date:   new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }),                                                                                                                
+      812 -      scores: { ..._last },                                                                                                                                                                                            
+      813 -      inputs,                                                                                                                                                                                                          
+      814 -    };                                                                                                                                                                                                                 
+      815 -    records.unshift(rec);                                                                                                                                                                                              
+      816 -    saveRecords(records);                                                                                                                                                                                              
+      817 -    renderRecords();                                                                                                                                                                                                   
+      818 -    showToast('✓ "' + name + '" saved to records!');                                                                                                                                                                   
+      808 +    try {                                                                                                                                                                                                              
+      809 +      await col.add({ ...rec, createdAt: firebase.firestore.FieldValue.serverTimestamp() });                                                                                                                           
+      810 +      showToast('✓ "' + name + '" saved to records!');                                                                                                                                                                 
+      811 +    } catch(e) {                                                                                                                                                                                                       
+      812 +      showToast('⚠ Failed to save. Check connection.');                                                                                                                                                                
+      813 +    }                                                                                                                                                                                                                  
+      814    }
+      815  }
+      816
+      817  function loadRecord(id) {
+      823 -  const records = loadRecords();                                                                                                                                                                                       
+      824 -  const rec = records.find(r => r.id === id);                                                                                                                                                                          
+      818 +  const rec = _records.find(r => r.id === id);                                                                                                                                                                         
+      819    if (!rec) return;
+      820    if (!rec.inputs) { showToast('⚠ This record has no stored input data.'); return; }
+      821
+      822    const inp = rec.inputs;
+      823
+      830 -  /* Fill header fields */                                                                                                                                                                                             
+      824    document.getElementById('animal_name').value    = inp.animalName    || '';
+      825    document.getElementById('date_harvested').value = inp.dateHarvested || '';
+      826    document.getElementById('hunter_name').value    = inp.hunterName    || '';
+      834 -                                                                                                                                                                                                                       
+      835 -  /* Fill point counts and trigger G-row visibility */                                                                                                                                                                 
+      827    document.getElementById('a_right').value = inp.pointsRight || '';
+      828    document.getElementById('a_left').value  = inp.pointsLeft  || '';
+      829    calculate();
+      830
+      840 -  /* Fill spread and abnormal */                                                                                                                                                                                       
+      831    setFV('d_spread', inp.dSpread);
+      832    setFV('e_right',  inp.eRight);
+      833    setFV('e_left',   inp.eLeft);
+      834
+      845 -  /* Fill all measurements (G rows are now visible for the right point count) */                                                                                                                                       
+      835    MEAS.forEach(m => {
+      836      setFV(m.id + '_r', inp[m.id + '_r']);
+      837      setFV(m.id + '_l', inp[m.id + '_l']);
+      838    });
+      839
+      851 -  /* Recalculate with all values loaded */                                                                                                                                                                             
+      840    calculate();
+      841
+      854 -  /* Enter edit mode */                                                                                                                                                                                                
+      842    _editingId = rec.id;
+      843    document.querySelector('.btn-finalize').innerHTML = '&#9998; Update Record';
+      844    const banner = document.getElementById('edit-banner');
+     ...
+      848    window.scrollTo({ top: 0, behavior: 'smooth' });
+      849  }
+      850
+      864 -function deleteRecord(id) {                                                                                                                                                                                            
+      865 -  saveRecords(loadRecords().filter(r => r.id !== id));                                                                                                                                                                 
+      866 -  renderRecords();                                                                                                                                                                                                     
+      867 -  showToast('Record deleted.');                                                                                                                                                                                        
+      851 +async function deleteRecord(id) {                                                                                                                                                                                      
+      852 +  try {                                                                                                                                                                                                                
+      853 +    await col.doc(id).delete();                                                                                                                                                                                        
+      854 +    showToast('Record deleted.');                                                                                                                                                                                      
+      855 +  } catch(e) {                                                                                                                                                                                                         
+      856 +    showToast('⚠ Failed to delete. Check connection.');                                                                                                                                                                
+      857 +  }                                                                                                                                                                                                                    
+      858  }
+      859
+      860  function toggleDetail(id) {
+     ...
+      867  }
+      868
+      869  function renderRecords() {
+      880 -  const records = loadRecords();                                                                                                                                                                                       
+      881 -  set('rec-count', records.length + (records.length === 1 ? ' deer' : ' deer'));                                                                                                                                       
+      870 +  set('rec-count', _records.length + (_records.length === 1 ? ' deer' : ' deer'));                                                                                                                                     
+      871    const list = document.getElementById('records-list');
+      883 -  if (!records.length) {                                                                                                                                                                                               
+      872 +  if (!_records.length) {                                                                                                                                                                                              
+      873      list.innerHTML = '<div class="no-records">No records yet. Score a deer and tap "Finalize &amp; Save".</div>';
+      874      return;
+      875    }
+      876
+      888 -  list.innerHTML = records.map(r => {                                                                                                                                                                                  
+      877 +  list.innerHTML = _records.map(r => {                                                                                                                                                                                 
+      878      const s = r.scores;
+      879      const hasAbnormal  = (s.eTotal || 0) > 0;
+      880      const displayGross = hasAbnormal ? s.ntGross : s.typGross;
+      881      const chipLabel    = hasAbnormal ? 'NT GROSS' : 'GROSS';
+      882      const chipClass    = hasAbnormal ? 'ntyp' : 'typ';
+      883
+      895 -    /* ── Build detail HTML ── */                                                                                                                                                                                      
+      884      let det = '';
+      885
+      886      if (r.inputs) {
+      899 -      /* Animal info */                                                                                                                                                                                                
+      887        det += `<div class="detail-info">`;
+      888        if (r.inputs.hunterName)
+      889          det += `<div class="detail-row"><span class="dr-lbl">Hunter</span><span class="dr-val">${escH(r.inputs.hunterName)}</span></div>`;
+     ...
+      899          det += `<div class="detail-row"><span class="dr-lbl">Abnormal (R / L)</span><span class="dr-val">${toFrac(r.inputs.eRight)} / ${toFrac(r.inputs.eLeft)}</span></div>`;
+      900        det += `</div>`;
+      901
+      915 -      /* Measurements table */                                                                                                                                                                                         
+      902        const measRows = MEAS.filter(m => (r.inputs[m.id+'_r']||0) > 0 || (r.inputs[m.id+'_l']||0) > 0);
+      903        if (measRows.length) {
+      904          det += `<div class="meas-detail"><div class="db-title">Measurements</div>`;
+     ...
+      918        }
+      919      }
+      920
+      935 -    /* Score breakdown */                                                                                                                                                                                              
+      921      det += `<div class="detail-grid">`;
+      922      det += `<div class="detail-block">
+      923        <div class="db-title">Typical</div>
+     ...
+      946
+      947      return `
+      948      <div class="record-card" id="rec-${r.id}">
+      964 -      <div class="record-top" onclick="toggleDetail(${r.id})">                                                                                                                                                         
+      949 +      <div class="record-top" onclick="toggleDetail('${r.id}')">                                                                                                                                                       
+      950          <div class="rec-info">
+      951            <div class="rec-name">${escH(r.name)}</div>
+      952            <div class="rec-date">${r.date}</div>
+     ...
+      962        <div class="record-detail">
+      963          ${det}
+      964          <div class="rec-actions">
+      980 -          <button class="btn-edit"   onclick="loadRecord(${r.id})">&#9998; Edit</button>                                                                                                                               
+      981 -          <button class="btn-delete" onclick="deleteRecord(${r.id})">&#128465; Delete</button>                                                                                                                         
+      965 +          <button class="btn-edit"   onclick="loadRecord('${r.id}')">&#9998; Edit</button>                                                                                                                             
+      966 +          <button class="btn-delete" onclick="deleteRecord('${r.id}')">&#128465; Delete</button>                                                                                                                       
+      967          </div>
+      968        </div>
+      969      </div>`;
+     ...
+      974     Init
+      975  ───────────────────────────────────────────── */
+      976  buildTable();
+      992 -renderRecords();                                                                                                                                                                                                       
+      977  document.getElementById('score-grid').style.gridTemplateColumns = '1fr';
+      978  </script>
+      979  </body>
+
+● The code is ready. When you paste your firebaseConfig, find this block near the top of the <script> section and replace the placeholder values:
+
+  const firebaseConfig = {
+    apiKey:            "PASTE_YOUR_API_KEY",                                                                                                                                                                                          authDomain:        "PASTE_YOUR_AUTH_DOMAIN",
+    projectId:         "PASTE_YOUR_PROJECT_ID",                                                                                                                                                                                   
+    storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",                                                                                                                                                                               
+    messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
+    appId:             "PASTE_YOUR_APP_ID"
   };
-  MEAS.forEach(m => {
-    inputs[m.id + '_r'] = fv(m.id + '_r');
-    inputs[m.id + '_l'] = fv(m.id + '_l');
-  });
 
-  const rec = {
-    id:     Date.now(),
-    name:   name,
-    date:   new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }),
-    scores: { ..._last },
-    inputs: inputs,
+  Just paste your real values in and then re-upload index.html to GitHub (go to your repo, click the file, click the pencil/edit icon, paste the new content, commit — or just drag the updated file onto the repo page).
+
+  Once it's live, everyone with the URL sees the same records in real-time — no refresh needed.
+
+✻ Churned for 4m 17s      
+
+※ recap: Building a shared deer scoring web app hosted on GitHub Pages. Firebase integration is coded and ready — the next step is completing Firebase setup in the console and pasting the config into the file. (disable recaps   in /config)                                                                                                                                                                                                                     
+                                                                                                                                                                                                                                  ❯ // Import the functions you need from the SDKs you need                                                                                                                                                                           import { initializeApp } from "firebase/app";                                                                                                                                                                                     import { getAnalytics } from "firebase/analytics";                                                                                                                                                                                // TODO: Add SDKs for Firebase products that you want to use
+  // https://firebase.google.com/docs/web/setup#available-libraries
+                                                                                                                                                                                                                                  
+  // Your web app's Firebase configuration
+  // For Firebase JS SDK v7.20.0 and later, measurementId is optional
+  const firebaseConfig = {
+    apiKey: "AIzaSyDnv0W3KhpNU6AndCu4fSKxaugDLpX75Oc",
+    authDomain: "deer-scoring-app-bhull.firebaseapp.com",
+    projectId: "deer-scoring-app-bhull",
+    storageBucket: "deer-scoring-app-bhull.firebasestorage.app",
+    messagingSenderId: "432923062534",
+    appId: "1:432923062534:web:4eff2e36692ed4115bee87",
+    measurementId: "G-X7XV0WF7M5"
   };
-  const records = loadRecords();
+                                                                                                                                                                                                                                  
+  // Initialize Firebase
+  const app = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+                                                                                                                                                                                                                                  
 
-  if (_editingId !== null) {
-    const editId = _editingId;
-    _editingId = null;
-    document.querySelector('.btn-finalize').innerHTML = '&#10003; Finalize &amp; Save';
-    document.getElementById('edit-banner').classList.remove('active');
-    const idx = records.findIndex(r => r.id === editId);
-    if (idx !== -1) {
-      records[idx] = { id: records[idx].id, name, date: records[idx].date, scores: { ..._last }, inputs };
-    }
-    saveRecords(records);
-    renderRecords();
-    showToast('✓ "' + name + '" updated!');
-  } else {
-    const rec = {
-      id:     Date.now(),
-      name,
-      date:   new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }),
-      scores: { ..._last },
-      inputs,
-    };
-    records.unshift(rec);
-    saveRecords(records);
-    renderRecords();
-    showToast('✓ "' + name + '" saved to records!');
-  }
-}
+● Got it. Let me plug those values in now.      
 
-function loadRecord(id) {
-  const records = loadRecords();
-  const rec = records.find(r => r.id === id);
-  if (!rec) return;
-  if (!rec.inputs) { showToast('⚠ This record has no stored input data.'); return; }
-
-  const inp = rec.inputs;
-
-  /* Fill header fields */
-  document.getElementById('animal_name').value    = inp.animalName    || '';
-  document.getElementById('date_harvested').value = inp.dateHarvested || '';
-  document.getElementById('hunter_name').value    = inp.hunterName    || '';
-
-  /* Fill point counts and trigger G-row visibility */
-  document.getElementById('a_right').value = inp.pointsRight || '';
-  document.getElementById('a_left').value  = inp.pointsLeft  || '';
-  calculate();
-
-  /* Fill spread and abnormal */
-  setFV('d_spread', inp.dSpread);
-  setFV('e_right',  inp.eRight);
-  setFV('e_left',   inp.eLeft);
-
-  /* Fill all measurements (G rows are now visible for the right point count) */
-  MEAS.forEach(m => {
-    setFV(m.id + '_r', inp[m.id + '_r']);
-    setFV(m.id + '_l', inp[m.id + '_l']);
-  });
-
-  /* Recalculate with all values loaded */
-  calculate();
-
-  /* Enter edit mode */
-  _editingId = rec.id;
-  document.querySelector('.btn-finalize').innerHTML = '&#9998; Update Record';
-  const banner = document.getElementById('edit-banner');
-  banner.classList.add('active');
-  banner.innerHTML = `&#9998; Editing <strong>${escH(rec.name)}</strong> — make your changes, then tap <strong>Update Record</strong>.`;
-
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function deleteRecord(id) {
-  saveRecords(loadRecords().filter(r => r.id !== id));
-  renderRecords();
-  showToast('Record deleted.');
-}
-
-function toggleDetail(id) {
-  const el = document.getElementById('rec-' + id);
-  if (el) el.classList.toggle('open');
-}
-
-function escH(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
-
-function renderRecords() {
-  const records = loadRecords();
-  set('rec-count', records.length + (records.length === 1 ? ' deer' : ' deer'));
-  const list = document.getElementById('records-list');
-  if (!records.length) {
-    list.innerHTML = '<div class="no-records">No records yet. Score a deer and tap "Finalize &amp; Save".</div>';
-    return;
-  }
-
-  list.innerHTML = records.map(r => {
-    const s = r.scores;
-    const hasAbnormal  = (s.eTotal || 0) > 0;
-    const displayGross = hasAbnormal ? s.ntGross : s.typGross;
-    const chipLabel    = hasAbnormal ? 'NT GROSS' : 'GROSS';
-    const chipClass    = hasAbnormal ? 'ntyp' : 'typ';
-
-    /* ── Build detail HTML ── */
-    let det = '';
-
-    if (r.inputs) {
-      /* Animal info */
-      det += `<div class="detail-info">`;
-      if (r.inputs.hunterName)
-        det += `<div class="detail-row"><span class="dr-lbl">Hunter</span><span class="dr-val">${escH(r.inputs.hunterName)}</span></div>`;
-      if (r.inputs.dateHarvested) {
-        const d = new Date(r.inputs.dateHarvested + 'T00:00:00');
-        det += `<div class="detail-row"><span class="dr-lbl">Date Harvested</span><span class="dr-val">${d.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'})}</span></div>`;
-      }
-      if (r.inputs.pointsRight || r.inputs.pointsLeft)
-        det += `<div class="detail-row"><span class="dr-lbl">Points (R / L)</span><span class="dr-val">${r.inputs.pointsRight || '—'} / ${r.inputs.pointsLeft || '—'}</span></div>`;
-      if (r.inputs.dSpread)
-        det += `<div class="detail-row"><span class="dr-lbl">Inside Spread</span><span class="dr-val">${toFrac(r.inputs.dSpread)}</span></div>`;
-      if ((r.inputs.eRight || 0) > 0 || (r.inputs.eLeft || 0) > 0)
-        det += `<div class="detail-row"><span class="dr-lbl">Abnormal (R / L)</span><span class="dr-val">${toFrac(r.inputs.eRight)} / ${toFrac(r.inputs.eLeft)}</span></div>`;
-      det += `</div>`;
-
-      /* Measurements table */
-      const measRows = MEAS.filter(m => (r.inputs[m.id+'_r']||0) > 0 || (r.inputs[m.id+'_l']||0) > 0);
-      if (measRows.length) {
-        det += `<div class="meas-detail"><div class="db-title">Measurements</div>`;
-        det += `<table class="meas-tbl"><thead><tr><th>Point</th><th>Right</th><th>Left</th><th>Diff</th></tr></thead><tbody>`;
-        measRows.forEach(m => {
-          const rv   = r.inputs[m.id+'_r'] || 0;
-          const lv   = r.inputs[m.id+'_l'] || 0;
-          const diff = Math.abs(rv - lv);
-          det += `<tr>`
-            + `<td class="md-lbl">${m.lb} ${m.nm}</td>`
-            + `<td>${toFrac(rv)}</td>`
-            + `<td>${toFrac(lv)}</td>`
-            + `<td class="md-diff">${diff > 0 ? toFrac(diff) : '—'}</td>`
-            + `</tr>`;
-        });
-        det += `</tbody></table></div>`;
-      }
-    }
-
-    /* Score breakdown */
-    det += `<div class="detail-grid">`;
-    det += `<div class="detail-block">
-      <div class="db-title">Typical</div>
-      <div class="detail-row dr-add"><span class="dr-lbl">Spread Credit</span><span class="dr-val">+ ${toFrac(s.sc)}</span></div>
-      <div class="detail-row dr-add"><span class="dr-lbl">Right (Col 1)</span><span class="dr-val">+ ${toFrac(s.c1)}</span></div>
-      <div class="detail-row dr-add"><span class="dr-lbl">Left (Col 2)</span><span class="dr-val">+ ${toFrac(s.c2)}</span></div>
-      <div class="detail-row dr-total"><span class="dr-lbl">Gross Score</span><span class="dr-val">${toFrac(s.typGross)}</span></div>
-      <div class="detail-row dr-sub"><span class="dr-lbl">Differences</span><span class="dr-val">− ${toFrac(s.c3)}</span></div>
-      <div class="detail-row dr-sub"><span class="dr-lbl">Abnormal Pts</span><span class="dr-val">− ${toFrac(s.eTotal)}</span></div>
-      <div class="detail-row dr-total"><span class="dr-lbl">Net Score</span><span class="dr-val">${toFrac(s.typNet)}</span></div>
-    </div>`;
-
-    if (hasAbnormal) {
-      det += `<div class="detail-block">
-        <div class="db-title">Non-Typical</div>
-        <div class="detail-row dr-add"><span class="dr-lbl">Spread Credit</span><span class="dr-val">+ ${toFrac(s.sc)}</span></div>
-        <div class="detail-row dr-add"><span class="dr-lbl">Right (Col 1)</span><span class="dr-val">+ ${toFrac(s.c1)}</span></div>
-        <div class="detail-row dr-add"><span class="dr-lbl">Left (Col 2)</span><span class="dr-val">+ ${toFrac(s.c2)}</span></div>
-        <div class="detail-row dr-add"><span class="dr-lbl">Abnormal Pts</span><span class="dr-val">+ ${toFrac(s.eTotal)}</span></div>
-        <div class="detail-row dr-total"><span class="dr-lbl">Gross Score</span><span class="dr-val">${toFrac(s.ntGross)}</span></div>
-        <div class="detail-row dr-sub"><span class="dr-lbl">Differences</span><span class="dr-val">− ${toFrac(s.c3)}</span></div>
-        <div class="detail-row dr-total"><span class="dr-lbl">Net Score</span><span class="dr-val">${toFrac(s.ntNet)}</span></div>
-      </div>`;
-    }
-    det += `</div>`;
-
-    return `
-    <div class="record-card" id="rec-${r.id}">
-      <div class="record-top" onclick="toggleDetail(${r.id})">
-        <div class="rec-info">
-          <div class="rec-name">${escH(r.name)}</div>
-          <div class="rec-date">${r.date}</div>
-        </div>
-        <div class="rec-scores">
-          <div class="rec-score-chip ${chipClass}">
-            <div class="rsc-lbl">${chipLabel}</div>
-            <div class="rsc-val">${toFrac(displayGross)}</div>
-          </div>
-        </div>
-        <div class="rec-chevron">&#9660;</div>
-      </div>
-      <div class="record-detail">
-        ${det}
-        <div class="rec-actions">
-          <button class="btn-edit"   onclick="loadRecord(${r.id})">&#9998; Edit</button>
-          <button class="btn-delete" onclick="deleteRecord(${r.id})">&#128465; Delete</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-/* ─────────────────────────────────────────────
-   Init
-───────────────────────────────────────────── */
-buildTable();
-renderRecords();
-document.getElementById('score-grid').style.gridTemplateColumns = '1fr';
-</script>
-</body>
-</html>
+● Update(index.html)
+  ⎿  Added 6 lines, removed 6 lines                                                                                                                                                                                               
+      502     Firebase — paste your config values here
+      503  ───────────────────────────────────────────── */                                                                                                                                                                             504  const firebaseConfig = {                                                                                                                                                                                               
+      505 -  apiKey:            "PASTE_YOUR_API_KEY",                                                                                                                                                                                   506 -  authDomain:        "PASTE_YOUR_AUTH_DOMAIN",                                                                                                                                                                         
+      507 -  projectId:         "PASTE_YOUR_PROJECT_ID",                                                                                                                                                                          
+      508 -  storageBucket:     "PASTE_YOUR_STORAGE_BUCKET",                                                                                                                                                                      
+      509 -  messagingSenderId: "PASTE_YOUR_MESSAGING_SENDER_ID",
+      510 -  appId:             "PASTE_YOUR_APP_ID"                                                                                                                                                                               
+      505 +  apiKey:            "AIzaSyDnv0W3KhpNU6AndCu4fSKxaugDLpX75Oc",                                                                                                                                                        
+      506 +  authDomain:        "deer-scoring-app-bhull.firebaseapp.com",                                                                                                                                                         
+      507 +  projectId:         "deer-scoring-app-bhull",                                                                                                                                                                         
+      508 +  storageBucket:     "deer-scoring-app-bhull.firebasestorage.app",                                                                                                                                                     
+      509 +  messagingSenderId: "432923062534",                                                                                                                                                                                   
+      510 +  appId:             "1:432923062534:web:4eff2e36692ed4115bee87"                                                                                                                                                       
+      511  };
+      512  firebase.initializeApp(firebaseConfig);
+      513  const db  = firebase.firestore();
